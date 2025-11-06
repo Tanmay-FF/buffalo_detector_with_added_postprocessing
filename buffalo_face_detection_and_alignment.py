@@ -171,7 +171,6 @@ def load_detector(device):
         ort.InferenceSession: The initialized detector session.
     """
     model_path = "models/scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx"
-    model_path = "models/scfrd_640_with_postprocessing.onnx"
     if not os.path.exists(model_path):
         print(f"ERROR: Buffalo model not found at: {model_path}.")
         print("Please ensure your new model (with post-processing) is at this location.")
