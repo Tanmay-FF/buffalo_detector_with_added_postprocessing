@@ -68,7 +68,7 @@ The pipeline is a two-step process. You only need to run **Step 1** once to crea
 
 ### Step 1: Add Post-processing to the Model
 
-Run the `add_postprocess_to_onnx.py` script. This will read your raw `buffalo_detector.onnx` file from the `models/` directory and save a new, processed model named `scfrd_640_with_postprocessing2.onnx` back into the same directory.
+Run the `add_postprocess_to_onnx.py` script. This will read your raw `buffalo_detector.onnx` file from the `models/` directory and save a new, processed model named `scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx` back into the same directory.
 
 ```bash
 python add_postprocess_to_onnx.py
