@@ -42,9 +42,9 @@ USE_KPS = True
 
 # --- I/O File Paths ---
 # IMPORTANT: Path to the original ONNX model file.
-MODEL_FILE = "buffalo_detector.onnx"
+MODEL_FILE = "models/buffalo_detector.onnx"
 # Path to save the new model with embedded post-processing.
-OUTPUT_FILE = "scfrd_640_with_postprocessing.onnx"
+OUTPUT_FILE = "models/scfrd_640_with_postprocessing.onnx"
 
 # IMPORTANT: These are the names of the raw output tensors from the original model.
 # The order is critical and must match the FPN levels (s8, s16, s32).
