@@ -1,165 +1,170 @@
-
+````{"id":"58741","variant":"standard","title":"Updated README with Dockerfile Support for C++ Inference"}
 # ONNX Face Detection and Alignment Pipeline
 
 This project provides a complete pipeline for high-performance face detection and alignment using ONNX models. It features two main components:
 
-1.  A utility script to embed all necessary post-processing (like anchor decoding and Non-Max Suppression) directly into a raw SCRFD/Buffalo-style ONNX face detector.
-2.  A main inference script that uses the processed model to detect faces, extract 5-point landmarks, and save aligned, cropped face images.
+1. **Python-based pipeline** that embeds post-processing (anchor decoding and NMS) into the ONNX model and performs detection + alignment.
+2. **C++-based inference environment** (via Docker) for high-performance deployment using ONNX Runtime GPU and CUDA 11.8.
+
+---
 
 ## 🚀 Features
 
-  * **High-Performance Inference:** Leverages `onnxruntime` for fast CPU or GPU-based detection.
-  * **Embedded Post-processing:** The `add_postprocess_to_onnx.py` script bakes decoding and NMS logic directly into the ONNX graph. This simplifies deployment and eliminates the need for complex post-processing code in your application.
-  * **Accurate Face Alignment:** Performs 5-point landmark detection and uses `skimage` to warp faces to a standard 224x224 ArcFace alignment.
-  * **Comprehensive Output:** For each input image, the script saves:
-      * Cropped bounding boxes for each detected face.
-      * Aligned 224x224 images for each face.
-      * A detailed `detection_results.json` file with coordinates, scores, and file paths.
-  * **Dynamic Thresholds:** The modified ONNX model accepts dynamic score and IoU thresholds as runtime inputs, giving you flexible control over detection sensitivity.
+- **High-Performance Inference:** Supports both Python and C++ inference using `onnxruntime` (CPU or GPU).
+- **Embedded Post-processing:** The `add_postprocess_to_onnx.py` script adds decoding and NMS directly into the ONNX graph — simplifying downstream deployment.
+- **Face Alignment:** Performs 5-point landmark-based alignment to generate standardized 224×224 ArcFace-aligned faces.
+- **C++ Docker Environment:** Includes a `Dockerfile` that sets up ONNX Runtime GPU (CUDA 11.8) and OpenCV for C++ inference.
+- **Comprehensive Output:** Each input image produces:
+  - Cropped and aligned face images.
+  - A detailed `detection_results.json` metadata file.
+- **Dynamic Thresholds:** The enhanced model supports runtime control of score and IoU thresholds.
+
+---
 
 ## 📦 Project Structure
-
-We recommend the following directory structure for clarity. The helper scripts are configured to look for models in a `models/` directory.
 
 ```
 buffalo_detector_with_added_postprocessing/
 ├── models/
-│   ├── buffalo_detector.onnx                                       # (INPUT) Your original, raw ONNX model
-│   └── scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx # (OUTPUT) The new model with post-processing
+│   ├── buffalo_detector.onnx                                       # (INPUT) Raw model
+│   └── scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx # (OUTPUT) Model with NMS + decoding
 │
-├── add_postprocess_to_onnx.py                  # Script to create the new model
-├── buffalo_face_detection_and_alignment.py     # Script to run detection
-├── requirements.txt                            # Project dependencies
-└── README.md                                   # Readme file
+├── add_postprocess_to_onnx.py                  # Adds post-processing to model
+├── buffalo_face_detection_and_alignment.py     # Python inference script
+├── main.cpp                                    # C++ inference and alignment code
+├── Dockerfile                                  # Docker setup for ONNX Runtime C++ (CUDA 11.8)
+├── requirements.txt                            # Python dependencies
+└── README.md
 ```
 
-## 🔧 Setup and Installation
+---
 
-1.  **Clone the Repository**
+## 🧰 Setup and Installation
 
-    ```bash
-    git clone https://github.com/Tanmay-FF/buffalo_detector_with_added_postprocessing.git
-    cd buffalo_detector_with_added_postprocessing
-    ```
+### Option 1️⃣ — Python Environment
 
-2.  **Create a Virtual Environment (Recommended)**
+1. **Clone and Setup:**
+   ```bash
+   git clone https://github.com/Tanmay-FF/buffalo_detector_with_added_postprocessing.git
+   cd buffalo_detector_with_added_postprocessing
+   python -m venv venv
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   ```
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-    ```
+2. **Prepare Models:**
+   Place your raw model in:
+   ```
+   models/buffalo_detector.onnx
+   ```
 
-3.  **Install Dependencies**
-    Install all required Python packages using the provided `requirements.txt` file.
+3. **Add Post-Processing to Model:**
+   ```bash
+   python add_postprocess_to_onnx.py
+   ```
+   This creates:
+   ```
+   models/scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx
+   ```
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+4. **Run Detection and Alignment (Python):**
+   ```bash
+   python buffalo_face_detection_and_alignment.py --image_path "path/to/test.jpg" --device cuda
+   ```
 
-4.  **Get the Base Model**
+---
 
-      * You must obtain the original, **raw ONNX face detector model** (e.g., `buffalo_detector.onnx`). This model should have multiple raw outputs (for scores, boxes, and keypoints at different FPN levels).
-      * Create a `models/` directory in your project root.
-      * Place your downloaded raw model inside the `models/` directory.
+### Option 2️⃣ — C++ Docker Environment (CUDA 11.8)
 
-## 🛠️ Usage (Quick Start)
+You can now build and run the **C++ ONNX Runtime GPU environment** using the provided `Dockerfile`.  
+This setup includes:
+- CUDA 11.8 + cuDNN 8  
+- ONNX Runtime GPU (v1.16.3)  
+- OpenCV (for image I/O and alignment)
 
-The pipeline is a two-step process. You only need to run **Step 1** once to create your new model.
-
-### Step 1: Add Post-processing to the Model
-
-Run the `add_postprocess_to_onnx.py` script. This will read your raw `buffalo_detector.onnx` file from the `models/` directory and save a new, processed model named `scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx` back into the same directory.
+#### 🏗️ Build the Docker Image
 
 ```bash
-python add_postprocess_to_onnx.py
+docker build -t buffalo_cpp_env .
 ```
 
-You should see an output like this:
+#### ▶️ Run the Container
 
-```
-Pre-computing anchors...
-Loading original model: models/buffalo_detector.onnx
-Detached original outputs.
-Added decoding nodes for all FPN levels.
-...
-Added NonMaxSuppression node with dynamic thresholds.
-...
-Graph cleanup complete.
-Successfully saved new model to: models/scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx
-You can now run the inference script on this new model.
-```
-
-### Step 2: Run Detection and Alignment
-
-Now you can use the new, processed model to detect faces in any image. The `buffalo_face_detection_and_alignment.py` script takes the image path as a required argument.
-
+Mount your local `models` and `sample_image` directories inside the container:
 ```bash
-# Run on CPU
-python buffalo_face_detection_and_alignment.py --image_path "path/to/your/test_image.jpg"
-
-# Run on GPU (if available)
-python buffalo_face_detection_and_alignment.py --image_path "path/to/your/test_image.jpg" --device cuda
+docker run --gpus all -it \
+  -v $(pwd)/models:/workspace/models \
+  -v $(pwd)/sample_image:/workspace/sample_image \
+  buffalo_cpp_env
 ```
 
-### Step 3: Check the Results
+#### 🧪 Run the C++ Inference Program
 
-After the script finishes, a new output directory (e.g., `output_test_image/`) will be created. Inside, you will find:
+Inside the container:
+```bash
+ ./main models/scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx  sample_image/0_Parade_Parade_0_178.jpg "cuda"
+```
 
-  * `test_image_original.jpg`: A copy of your input.
-  * `face_0_cropped.jpg`: The cropped image of the first detected face.
-  * `face_0_aligned_224x224.jpg`: The aligned image of the first face.
-  * `face_1_cropped.jpg`: (and so on, for each detected face)
-  * `face_1_aligned_224x224.jpg`: ...
-  * `detection_results.json`: A JSON file containing all metadata.
+This program:
+- Loads the ONNX model (`models/scfrd_640_with_postprocessing_and_dynamic_thresholding.onnx`)
+- Runs detection on the input image
+- Performs alignment using 5-point landmarks
+- Saves:
+  - Cropped face images
+  - 224×224 aligned faces
 
-**Example `detection_results.json`:**
+✅ **Results from C++ match the Python inference outputs**, ensuring consistent detection and alignment.
+
+---
+
+## 🧾 Example Output
+
+Output directory (e.g., `output_test_image/`):
+
+```
+output_test_image/
+├── test_image_original.jpg
+├── face_0_cropped.jpg
+├── face_0_aligned_224x224.jpg
+├── face_1_cropped.jpg
+├── face_1_aligned_224x224.jpg
+└── detection_results.json
+```
+
+---
+
+## 🧩 Example `detection_results.json`
 
 ```json
 {
-  "image_path": ".\\sample_image\\132708392331985247.png",
-  "image_shape": [
-    392,
-    272,
-    3
-  ],
+  "image_path": "./sample_image/132708392331985247.png",
   "device": "cuda",
   "alignment_size": 224,
   "num_faces_detected": 1,
   "faces": [
     {
       "face_idx": 0,
-      "bbox": [
-        52.01586151123047,
-        88.4870376586914,
-        226.49713134765625,
-        314.0374450683594
-      ],
+      "bbox": [52.01586, 88.48704, 226.4971, 314.0374],
       "landmarks": [
-        [
-          80.88432312011719,
-          179.15338134765625
-        ],
-        [
-          154.16847229003906,
-          177.8902587890625
-        ],
-        [
-          103.39361572265625,
-          222.6280059814453
-        ],
-        [
-          91.40494537353516,
-          263.6992492675781
-        ],
-        [
-          146.775634765625,
-          263.1143798828125
-        ]
+        [80.88432, 179.15338],
+        [154.16847, 177.89026],
+        [103.39361, 222.62800],
+        [91.40494, 263.69925],
+        [146.77563, 263.11438]
       ],
-      "det_score": 0.8338995575904846,
-      "detection_output": "output_132708392331985247\\face_0_cropped.jpg",
-      "aligned_path": "output_132708392331985247\\face_0_aligned_224x224.jpg"
+      "det_score": 0.8339,
+      "detection_output": "output_132708392331985247/face_0_cropped.jpg",
+      "aligned_path": "output_132708392331985247/face_0_aligned_224x224.jpg"
     }
   ]
 }
 ```
+
+---
+
+
+**Author:** Tanmay Thaker
+**Docker GPU Runtime:** CUDA 11.8  
+**ONNX Runtime:** v1.16.3  
+**OpenCV:** Latest (via apt)
+````
