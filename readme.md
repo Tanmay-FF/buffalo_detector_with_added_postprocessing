@@ -1,4 +1,4 @@
-````{"id":"58741","variant":"standard","title":"Updated README with Dockerfile Support for C++ Inference"}
+
 # ONNX Face Detection and Alignment Pipeline
 
 This project provides a complete pipeline for high-performance face detection and alignment using ONNX models. It features two main components:
